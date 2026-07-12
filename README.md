@@ -2,94 +2,93 @@
 
 > Evidence-backed AI answer visibility audits for brands and agencies.
 
-Citely Phase 0 is an internal operator prototype. It runs a customer-approved panel of commercial prompts through one or more answer providers, stores raw evidence, detects brand and competitor mentions, produces directional metrics, and generates reviewable Markdown and HTML reports.
+Citely measures how AI answer systems represent and recommend a brand across customer-approved commercial prompts. It preserves raw evidence, separates provider failures from brand absence, compares competitors, and produces human-reviewed, versioned visibility metrics.
 
-The goal is to validate a paid recurring decision loop before building the full Workers + Supabase SaaS.
+## Current implementation
 
-## What is implemented
+### Phase 0 — concierge audit operator
 
-- JSON audit configuration with brand aliases, competitors, prompt stages, importance, geography, and repetitions
-- Replaceable provider adapters for OpenAI, Perplexity, and deterministic mock data
-- Immutable run output containing raw provider responses and failures
-- Brand/competitor entity matching
-- Citation ownership classification
-- Directional mention and weighted-visibility scoring
-- Prompt-level Markdown and HTML evidence reports
-- Node test suite
-- Phase 0 methodology, sales experiment, and validation gates
+- JSON audit configuration
+- OpenAI, Perplexity and deterministic mock providers
+- Raw evidence and citation capture
+- Brand and competitor alias matching
+- Directional Markdown and HTML reports
+- Validation and sales playbook
+
+### Phase 1 — reliable measurement engine
+
+- Frozen prompt and provider-profile versions
+- Deterministic observation idempotency keys
+- Audit-run and item state machines
+- Leases, attempts and bounded retries
+- Immutable accepted observations
+- Failure taxonomy that never treats provider failure as brand absence
+- Per-audit, workspace and global cost guards
+- Human accept/correct/exclude review records
+- Versioned `visibility-v1` scoring
+- Supabase schema, RLS and append-only evidence controls
+- Cloudflare Workflow and authenticated operator API
+- Failure-injection demo and 13 dedicated Phase 1 tests
 
 ## Requirements
 
 - Node.js 20 or newer
-- Provider API keys only when using live providers
+- Provider API keys only for live audits
+- Supabase and Cloudflare accounts for the deployed Phase 1 path
 
-No third-party npm dependencies are required.
+The measurement-engine core has no third-party runtime dependencies.
 
-## Run the deterministic demo
+## Run Phase 0 demo
 
 ```bash
 npm run demo
 ```
 
-Generated files:
+## Run Phase 1 durable-engine demo
+
+```bash
+npm run demo:phase1
+```
+
+Generated artifact:
 
 ```text
-output/demo/run.json
-output/demo/report.md
-output/demo/report.html
+output/phase1-demo/measurement-engine.json
 ```
-
-## Run a live audit
-
-Copy the example and replace the fictional entities and prompts:
-
-```bash
-cp examples/demo-audit.json examples/my-client.audit.json
-cp .env.example .env
-```
-
-Export the required key in your shell, then run one or both providers:
-
-```bash
-OPENAI_API_KEY=... node src/citely.mjs audit \
-  --config examples/my-client.audit.json \
-  --provider openai \
-  --out output/my-client
-
-OPENAI_API_KEY=... PERPLEXITY_API_KEY=... node src/citely.mjs audit \
-  --config examples/my-client.audit.json \
-  --provider openai,perplexity \
-  --out output/my-client
-```
-
-The CLI intentionally does not auto-load `.env`; use your shell, secret manager, or deployment environment so secrets never enter run artifacts.
 
 ## Validate
 
 ```bash
-npm test
+npm run check:phase1
 npm run check
 ```
 
-## Operator workflow
+## Deploy Phase 1
 
-1. Interview and qualify the buyer.
-2. Create a commercially relevant prompt panel using `docs/phase-0-playbook.md`.
-3. Obtain customer approval for the panel.
-4. Run the audit and inspect `run.json`.
-5. Complete the checklist in `docs/phase-0-playbook.md`.
-6. Replace automatic interpretation with human-reviewed findings and three evidence-backed actions.
-7. Ask for payment and a future rerun.
-8. Record the outcome in `docs/phase-0-playbook.md`.
+1. Review `docs/phase-1-architecture.md`.
+2. Apply the ordered migrations in `supabase/migrations/`.
+3. Configure Cloudflare secrets described in `docs/phase-1-runbook.md`.
+4. Deploy with `npx wrangler@latest deploy`.
+5. Create a frozen audit run and start its deterministic Workflow instance.
+6. Human-review every successful observation before customer delivery.
 
-## Important limitations
+## Repository map
 
-- Entity matching is deterministic and can still misread ambiguous brand names.
-- Automatic mention status uses presence and order; it does not yet infer sentiment or nuanced recommendation strength.
-- OpenAI audits use the Responses API web-search tool; citation annotations still require operator verification.
-- Provider outputs fluctuate. Increase repetitions for important prompts and report instability honestly.
-- The generated report is an operator draft, not an automatically publishable customer verdict.
+```text
+src/citely.mjs                         Phase 0 CLI
+src/engine/                            Phase 1 tested domain engine
+src/phase1-demo.mjs                    Failure-injection vertical slice
+workers/src/                           Cloudflare API and Workflow
+supabase/migrations/                   Durable schema and RLS
+examples/                              Phase 0 audit configuration
+docs/phase-0-playbook.md               Validation methodology
+docs/phase-1-architecture.md           Measurement-engine design
+docs/phase-1-runbook.md                Operations and deployment
+tests/                                 Phase 0 and Phase 1 tests
+```
 
-## Phase progression
+## Trust boundary
 
-Phase 1 should only begin after Phase 0 proves that buyers pay, act on findings, and request repeat measurement. The next engineering phase would add durable queues, database persistence, user workspaces, reviewed recommendation records, cost controls, and scheduled reruns.
+LLM answers are variable. Citely promises reproducible methodology and preserved evidence, not identical responses. Raw provider output is immutable; automated interpretation is provisional; human review is append-only; scores identify their scoring-model version.
+
+Provider retries can consume more than one billable call after a network interruption, but database constraints allow only one accepted observation per intended prompt/provider/repetition item.
