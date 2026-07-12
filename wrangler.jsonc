@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "citely-measurement-engine",
+  "main": "workers/src/index.ts",
+  "compatibility_date": "2026-07-12",
+  "observability": {
+    "enabled": true
+  },
+  "workflows": [
+    {
+      "name": "citely-audit-workflow",
+      "binding": "AUDIT_WORKFLOW",
+      "class_name": "AuditWorkflow"
+    }
+  ]
+}

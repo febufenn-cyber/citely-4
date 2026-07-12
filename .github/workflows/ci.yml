@@ -1,0 +1,25 @@
+name: Citely CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate Phase 0 and Phase 1
+        run: npm run check
+      - name: Type-check Cloudflare Worker
+        run: npx --yes -p typescript@5.9.3 tsc -p workers/tsconfig.json --noEmit
+      - name: Run Phase 1 deterministic demo
+        run: npm run demo:phase1

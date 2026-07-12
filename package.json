@@ -1,14 +1,16 @@
 {
-  "name": "citely-phase-0",
-  "version": "0.1.0",
+  "name": "citely-measurement-engine",
+  "version": "0.2.0",
   "private": true,
-  "description": "Evidence-backed AI visibility audit operator prototype",
+  "description": "Evidence-backed AI visibility audit operator and reliable measurement engine",
   "type": "module",
   "engines": { "node": ">=20" },
   "scripts": {
     "audit": "node src/citely.mjs audit",
     "demo": "node src/citely.mjs audit --config examples/demo-audit.json --provider mock --out output/demo",
+    "demo:phase1": "node src/phase1-demo.mjs",
     "test": "node --test",
-    "check": "node --check src/citely.mjs && node --test"
+    "check:phase1": "node --check src/phase1-demo.mjs && find src/engine -name '*.mjs' -print0 | xargs -0 -n1 node --check && node --test tests/phase1-engine.test.mjs",
+    "check": "node --check src/citely.mjs && node --check src/phase1-demo.mjs && find src/engine -name '*.mjs' -print0 | xargs -0 -n1 node --check && node --test"
   }
 }
