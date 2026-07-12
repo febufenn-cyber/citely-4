@@ -1,42 +1,95 @@
 # Citely
 
-> tracks whether ChatGPT/Perplexity mention your brand for key prompts and recommends fixes.
+> Evidence-backed AI answer visibility audits for brands and agencies.
 
-**Alternative to the product-shape pioneered by AthenaHQ (YC ~W24)** — rank #4 of 500 in the [YC-500 Fable 5 Venture Blueprint](https://github.com/) (score 7.35/10).
+Citely Phase 0 is an internal operator prototype. It runs a customer-approved panel of commercial prompts through one or more answer providers, stores raw evidence, detects brand and competitor mentions, produces directional metrics, and generates reviewable Markdown and HTML reports.
 
-## Why this exists
-Early leader in fast-growing GEO category as buyers shift from Google to LLMs. The buildable wedge: query llms for brand mentions, score visibility, and suggest content fixes via claude.
+The goal is to validate a paid recurring decision loop before building the full Workers + Supabase SaaS.
 
-## MVP scope
-- [ ] Prompt set tracking
-- [ ] multi-LLM query
-- [ ] share-of-voice score
-- [ ] competitor gap
-- [ ] fix suggestions
+## What is implemented
 
-## Architecture
-`Workers+Supabase+Claude` — Cloudflare Workers + Hono API, Supabase (Postgres + RLS + Auth + pgvector), Claude API via Agent SDK (claude-fable-5 for agent reasoning, claude-haiku-4-5 for volume), wrangler deploys.
+- JSON audit configuration with brand aliases, competitors, prompt stages, importance, geography, and repetitions
+- Replaceable provider adapters for OpenAI, Perplexity, and deterministic mock data
+- Immutable run output containing raw provider responses and failures
+- Brand/competitor entity matching
+- Citation ownership classification
+- Directional mention and weighted-visibility scoring
+- Prompt-level Markdown and HTML evidence reports
+- Node test suite
+- Phase 0 methodology, sales experiment, and validation gates
 
-**Integrations:** OpenAI; Perplexity; Claude API; SerpAPI
-**Data:** Tracked prompts, LLM responses over time, competitor mentions
-**Agent core:** Agent runs weekly prompt panels and drafts GEO content to win citations.
+## Requirements
 
-## Business
-| | |
-|---|---|
-| Monetization | $99-499/mo per brand |
-| First customer | Marketing lead worried about AI search |
-| GTM wedge | Free 'is your brand in ChatGPT' audit tool as viral lead magnet |
-| Competition risk | High: Athena, Profound, Peec |
-| Regulatory/trust risk | Med: LLM API ToS and cost |
-| India angle | Affordable GEO tracking for Indian brands and agencies globally. |
-| Difficulty / build time | Medium / 2-3 weeks |
+- Node.js 20 or newer
+- Provider API keys only when using live providers
 
-## 30-day plan
-- **W1:** core loop — Prompt set tracking + multi-LLM query
-- **W2:** share-of-voice score + competitor gap + fix suggestions + auth + billing
-- **W3:** polish, instrument events, seed first users via: Free 'is your brand in ChatGPT' audit tool as viral lead magnet
-- **W4:** launch + first revenue; kill/scale decision
+No third-party npm dependencies are required.
 
----
-*Built with Fable 5 (Claude Code). Blueprint row: inspired by AthenaHQ — "Generative Engine Optimization: get brands cited by ChatGPT and AI search."*
+## Run the deterministic demo
+
+```bash
+npm run demo
+```
+
+Generated files:
+
+```text
+output/demo/run.json
+output/demo/report.md
+output/demo/report.html
+```
+
+## Run a live audit
+
+Copy the example and replace the fictional entities and prompts:
+
+```bash
+cp examples/demo-audit.json examples/my-client.audit.json
+cp .env.example .env
+```
+
+Export the required key in your shell, then run one or both providers:
+
+```bash
+OPENAI_API_KEY=... node src/citely.mjs audit \
+  --config examples/my-client.audit.json \
+  --provider openai \
+  --out output/my-client
+
+OPENAI_API_KEY=... PERPLEXITY_API_KEY=... node src/citely.mjs audit \
+  --config examples/my-client.audit.json \
+  --provider openai,perplexity \
+  --out output/my-client
+```
+
+The CLI intentionally does not auto-load `.env`; use your shell, secret manager, or deployment environment so secrets never enter run artifacts.
+
+## Validate
+
+```bash
+npm test
+npm run check
+```
+
+## Operator workflow
+
+1. Interview and qualify the buyer.
+2. Create a commercially relevant prompt panel using `docs/phase-0-playbook.md`.
+3. Obtain customer approval for the panel.
+4. Run the audit and inspect `run.json`.
+5. Complete the checklist in `docs/phase-0-playbook.md`.
+6. Replace automatic interpretation with human-reviewed findings and three evidence-backed actions.
+7. Ask for payment and a future rerun.
+8. Record the outcome in `docs/phase-0-playbook.md`.
+
+## Important limitations
+
+- Entity matching is deterministic and can still misread ambiguous brand names.
+- Automatic mention status uses presence and order; it does not yet infer sentiment or nuanced recommendation strength.
+- OpenAI audits use the Responses API web-search tool; citation annotations still require operator verification.
+- Provider outputs fluctuate. Increase repetitions for important prompts and report instability honestly.
+- The generated report is an operator draft, not an automatically publishable customer verdict.
+
+## Phase progression
+
+Phase 1 should only begin after Phase 0 proves that buyers pay, act on findings, and request repeat measurement. The next engineering phase would add durable queues, database persistence, user workspaces, reviewed recommendation records, cost controls, and scheduled reruns.
