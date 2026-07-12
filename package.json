@@ -1,0 +1,14 @@
+{
+  "name": "citely-phase-0",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Evidence-backed AI visibility audit operator prototype",
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "audit": "node src/citely.mjs audit",
+    "demo": "node src/citely.mjs audit --config examples/demo-audit.json --provider mock --out output/demo",
+    "test": "node --test",
+    "check": "node --check src/citely.mjs && node --test"
+  }
+}

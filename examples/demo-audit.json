@@ -1,0 +1,75 @@
+{
+  "auditId": "demo-citely-india-001",
+  "geography": "India",
+  "locale": "en-IN",
+  "repetitions": 1,
+  "brand": {
+    "name": "Citely",
+    "domain": "citely.example",
+    "aliases": ["Citely", "citely.example"]
+  },
+  "competitors": [
+    {
+      "id": "brightreach",
+      "name": "BrightReach",
+      "domain": "brightreach.example",
+      "aliases": ["BrightReach"]
+    },
+    {
+      "id": "northstar",
+      "name": "Northstar",
+      "domain": "northstar.example",
+      "aliases": ["Northstar"]
+    },
+    {
+      "id": "signalmap",
+      "name": "SignalMap",
+      "domain": "signalmap.example",
+      "aliases": ["SignalMap"]
+    }
+  ],
+  "prompts": [
+    {
+      "id": "p1",
+      "stage": "category-discovery",
+      "importance": 5,
+      "persona": "B2B marketing lead",
+      "text": "What are the best AI visibility monitoring platforms for Indian B2B brands?"
+    },
+    {
+      "id": "p2",
+      "stage": "comparison",
+      "importance": 4,
+      "persona": "SEO agency owner",
+      "text": "What are the best alternatives to BrightReach for AI answer visibility tracking?"
+    },
+    {
+      "id": "p3",
+      "stage": "purchase-decision",
+      "importance": 5,
+      "persona": "Small agency owner",
+      "text": "Which AI visibility tool should a small Indian SEO agency choose for client reporting?"
+    },
+    {
+      "id": "p4",
+      "stage": "brand-understanding",
+      "importance": 3,
+      "persona": "Prospective buyer",
+      "text": "What does Citely do and who is it for?"
+    },
+    {
+      "id": "p5",
+      "stage": "use-case",
+      "importance": 5,
+      "persona": "Indian SaaS founder",
+      "text": "Which platform is best for evidence-backed AI visibility audits in India?"
+    },
+    {
+      "id": "p6",
+      "stage": "trust-risk",
+      "importance": 4,
+      "persona": "Risk-conscious marketing lead",
+      "text": "What are the risks or disadvantages of using Citely?"
+    }
+  ]
+}
