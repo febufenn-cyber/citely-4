@@ -1,94 +1,95 @@
 # Citely
 
-> Evidence-backed AI answer visibility audits for brands and agencies.
+> Evidence-backed AI answer visibility measurement and controlled customer reporting.
 
-Citely measures how AI answer systems represent and recommend a brand across customer-approved commercial prompts. It preserves raw evidence, separates provider failures from brand absence, compares competitors, and produces human-reviewed, versioned visibility metrics.
+Citely now contains three connected product layers:
 
-## Current implementation
+1. **Phase 0 — audit operator:** configurable prompt panels, provider adapters, raw evidence, directional analysis, Markdown and HTML output.
+2. **Phase 1 — reliable measurement engine:** immutable observations, retries, budgets, review decisions, versioned scoring, Supabase and Cloudflare Workflows.
+3. **Phase 2 — evidence delivery:** review APIs, immutable report versions, publication, expiring share links, evidence-first HTML reports, and guarded baseline comparisons.
 
-### Phase 0 — concierge audit operator
+## Phase 2 principle
 
-- JSON audit configuration
-- OpenAI, Perplexity and deterministic mock providers
-- Raw evidence and citation capture
-- Brand and competitor alias matching
-- Directional Markdown and HTML reports
-- Validation and sales playbook
-
-### Phase 1 — reliable measurement engine
-
-- Frozen prompt and provider-profile versions
-- Deterministic observation idempotency keys
-- Audit-run and item state machines
-- Leases, attempts and bounded retries
-- Immutable accepted observations
-- Failure taxonomy that never treats provider failure as brand absence
-- Per-audit, workspace and global cost guards
-- Human accept/correct/exclude review records
-- Versioned `visibility-v1` scoring
-- Supabase schema, RLS and append-only evidence controls
-- Cloudflare Workflow and authenticated operator API
-- Failure-injection demo and 13 dedicated Phase 1 tests
-
-## Requirements
-
-- Node.js 20 or newer
-- Provider API keys only for live audits
-- Supabase and Cloudflare accounts for the deployed Phase 1 path
-
-The measurement-engine core has no third-party runtime dependencies.
-
-## Run Phase 0 demo
-
-```bash
-npm run demo
-```
-
-## Run Phase 1 durable-engine demo
-
-```bash
-npm run demo:phase1
-```
-
-Generated artifact:
+A customer never sees a machine-only conclusion. The publication path is:
 
 ```text
-output/phase1-demo/measurement-engine.json
+provider evidence
+→ automated candidate
+→ human accept/correct/exclude
+→ versioned score
+→ immutable report snapshot
+→ published customer report
 ```
 
-## Validate
+## Local validation
 
 ```bash
-npm run check:phase1
 npm run check
+npm run check:worker
+npm run demo:phase2
 ```
 
-## Deploy Phase 1
-
-1. Review `docs/phase-1-architecture.md`.
-2. Apply the ordered migrations in `supabase/migrations/`.
-3. Configure Cloudflare secrets described in `docs/phase-1-runbook.md`.
-4. Deploy with `npx wrangler@latest deploy`.
-5. Create a frozen audit run and start its deterministic Workflow instance.
-6. Human-review every successful observation before customer delivery.
-
-## Repository map
+The Phase 2 demo writes:
 
 ```text
-src/citely.mjs                         Phase 0 CLI
-src/engine/                            Phase 1 tested domain engine
-src/phase1-demo.mjs                    Failure-injection vertical slice
-workers/src/                           Cloudflare API and Workflow
-supabase/migrations/                   Durable schema and RLS
-examples/                              Phase 0 audit configuration
-docs/phase-0-playbook.md               Validation methodology
-docs/phase-1-architecture.md           Measurement-engine design
-docs/phase-1-runbook.md                Operations and deployment
-tests/                                 Phase 0 and Phase 1 tests
+output/phase2-demo/report.json
+output/phase2-demo/comparison.json
+output/phase2-demo/report.html
 ```
 
-## Trust boundary
+## Phase 2 API
 
-LLM answers are variable. Citely promises reproducible methodology and preserved evidence, not identical responses. Raw provider output is immutable; automated interpretation is provisional; human review is append-only; scores identify their scoring-model version.
+Public:
 
-Provider retries can consume more than one billable call after a network interruption, but database constraints allow only one accepted observation per intended prompt/provider/repetition item.
+```text
+GET /health
+GET /portal
+GET /share/:token
+```
+
+Operator-authenticated:
+
+```text
+GET  /v1/review-queue?workspace_id=...
+POST /v1/audit-run-items/:id/review
+POST /v1/audit-runs/:id/report-draft
+POST /v1/reports/:id/publish
+POST /v1/reports/:id/share
+POST /v1/reports/:id/compare/:baselineId
+GET  /v1/reports/:id
+```
+
+Mutations also require `x-actor-id` with the UUID of the acting Supabase user.
+
+## Database migrations
+
+Apply all ordered migrations through the normal Supabase workflow:
+
+```bash
+supabase db push
+```
+
+Phase 2 adds report drafts and immutable versions, publications, hashed share links, prompt approvals, comments, disputes, comparisons, methodology events, RLS, and publication immutability controls.
+
+## Cloudflare configuration
+
+Existing secrets remain required:
+
+```bash
+npx wrangler@latest secret put SUPABASE_URL
+npx wrangler@latest secret put SUPABASE_SERVICE_ROLE_KEY
+npx wrangler@latest secret put OPERATOR_API_KEY
+npx wrangler@latest secret put OPENAI_API_KEY
+npx wrangler@latest secret put PERPLEXITY_API_KEY
+```
+
+`PUBLIC_BASE_URL` is optional. When omitted, share links use the request origin.
+
+## Important boundaries
+
+- Migrations and public-report routes require a supervised staging deployment before production use.
+- Public links are expiring and revocable; permanent anonymous reports are intentionally unsupported.
+- Published reports disclose observed AI-answer visibility, not guaranteed traffic, leads, or revenue.
+- Recommendation execution and autonomous publishing remain outside Phase 2.
+
+See `docs/phase-2-product.md` for the product reasoning, invariants, blind spots, and exit criteria.

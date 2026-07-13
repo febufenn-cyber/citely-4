@@ -7,6 +7,7 @@ export interface Env {
   PERPLEXITY_API_KEY?: string;
   AUDIT_WORKFLOW: Workflow;
   OPERATOR_API_KEY: string;
+  PUBLIC_BASE_URL?: string;
 }
 
 export type WorkflowParams = { auditRunId: string };

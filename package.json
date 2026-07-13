@@ -1,16 +1,20 @@
 {
-  "name": "citely-measurement-engine",
-  "version": "0.2.0",
+  "name": "citely-evidence-portal",
+  "version": "0.3.0",
   "private": true,
-  "description": "Evidence-backed AI visibility audit operator and reliable measurement engine",
+  "description": "Evidence-backed AI visibility audits, reliable measurement, and controlled report publication",
   "type": "module",
   "engines": { "node": ">=20" },
   "scripts": {
     "audit": "node src/citely.mjs audit",
     "demo": "node src/citely.mjs audit --config examples/demo-audit.json --provider mock --out output/demo",
     "demo:phase1": "node src/phase1-demo.mjs",
+    "demo:phase2": "node src/phase2-demo.mjs",
     "test": "node --test",
+    "test:phase2": "node --test tests/phase2-reporting.test.mjs",
     "check:phase1": "node --check src/phase1-demo.mjs && find src/engine -name '*.mjs' -print0 | xargs -0 -n1 node --check && node --test tests/phase1-engine.test.mjs",
-    "check": "node --check src/citely.mjs && node --check src/phase1-demo.mjs && find src/engine -name '*.mjs' -print0 | xargs -0 -n1 node --check && node --test"
+    "check:phase2": "find src/phase2 -name '*.mjs' -print0 | xargs -0 -n1 node --check && node --check src/phase2-demo.mjs && node --test tests/phase2-reporting.test.mjs",
+    "check:worker": "tsc -p workers/tsconfig.json --noEmit",
+    "check": "node --check src/citely.mjs && node --check src/phase1-demo.mjs && find src/engine src/phase2 -name '*.mjs' -print0 | xargs -0 -n1 node --check && node --check src/phase2-demo.mjs && node --test"
   }
 }
