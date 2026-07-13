@@ -1,65 +1,58 @@
 # Citely
 
-> Evidence-backed AI answer visibility measurement and controlled customer reporting.
+> Evidence-backed AI answer visibility measurement, controlled customer reporting, and guarded action experiments.
 
-Citely now contains three connected product layers:
+Citely now contains four connected product layers:
 
 1. **Phase 0 — audit operator:** configurable prompt panels, provider adapters, raw evidence, directional analysis, Markdown and HTML output.
 2. **Phase 1 — reliable measurement engine:** immutable observations, retries, budgets, review decisions, versioned scoring, Supabase and Cloudflare Workflows.
 3. **Phase 2 — evidence delivery:** review APIs, immutable report versions, publication, expiring share links, evidence-first HTML reports, and guarded baseline comparisons.
+4. **Phase 3 — action and experiment engine:** prioritized findings, assigned interventions, frozen hypotheses and success criteria, implementation evidence, comparable reruns, and observational outcome evaluation.
 
-## Phase 2 principle
+## Phase 3 principle
 
-A customer never sees a machine-only conclusion. The publication path is:
+Citely does not jump from a visibility gap to an unsupported recommendation. The action loop is:
 
 ```text
-provider evidence
-→ automated candidate
-→ human accept/correct/exclude
-→ versioned score
-→ immutable report snapshot
-→ published customer report
+published finding
+→ prioritized action
+→ assigned intervention
+→ frozen experiment plan
+→ implementation evidence
+→ comparable rerun
+→ guarded evaluation
 ```
+
+Every experiment freezes its baseline report, target prompts, provider scope, primary metric, minimum effect, completeness threshold, sample requirement, and guardrails before implementation. Results are capped at `moderate` causal confidence and explicitly described as observational rather than proof.
 
 ## Local validation
 
 ```bash
 npm run check
 npm run check:worker
-npm run demo:phase2
+npm run demo:phase3
 ```
 
-The Phase 2 demo writes:
+The Phase 3 demo writes:
 
 ```text
-output/phase2-demo/report.json
-output/phase2-demo/comparison.json
-output/phase2-demo/report.html
+output/phase3-demo/action-experiment.json
 ```
 
-## Phase 2 API
-
-Public:
-
-```text
-GET /health
-GET /portal
-GET /share/:token
-```
+## Phase 3 API
 
 Operator-authenticated:
 
 ```text
-GET  /v1/review-queue?workspace_id=...
-POST /v1/audit-run-items/:id/review
-POST /v1/audit-runs/:id/report-draft
-POST /v1/reports/:id/publish
-POST /v1/reports/:id/share
-POST /v1/reports/:id/compare/:baselineId
-GET  /v1/reports/:id
+GET  /v1/brands/:brandId/action-board
+POST /v1/report-versions/:reportVersionId/findings
+POST /v1/findings/:findingId/interventions
+POST /v1/interventions/:interventionId/transition
+POST /v1/interventions/:interventionId/evidence
+POST /v1/interventions/:interventionId/evaluate
 ```
 
-Mutations also require `x-actor-id` with the UUID of the acting Supabase user.
+Existing Phase 2 public report and operator endpoints remain available. Mutations require `x-actor-id` with the UUID of the acting Supabase user.
 
 ## Database migrations
 
@@ -69,27 +62,14 @@ Apply all ordered migrations through the normal Supabase workflow:
 supabase db push
 ```
 
-Phase 2 adds report drafts and immutable versions, publications, hashed share links, prompt approvals, comments, disputes, comparisons, methodology events, RLS, and publication immutability controls.
-
-## Cloudflare configuration
-
-Existing secrets remain required:
-
-```bash
-npx wrangler@latest secret put SUPABASE_URL
-npx wrangler@latest secret put SUPABASE_SERVICE_ROLE_KEY
-npx wrangler@latest secret put OPERATOR_API_KEY
-npx wrangler@latest secret put OPENAI_API_KEY
-npx wrangler@latest secret put PERPLEXITY_API_KEY
-```
-
-`PUBLIC_BASE_URL` is optional. When omitted, share links use the request origin.
+Phase 3 adds findings, interventions, append-only state events, implementation evidence, frozen experiment plans, immutable evaluations, RLS, and experiment-configuration freeze controls.
 
 ## Important boundaries
 
-- Migrations and public-report routes require a supervised staging deployment before production use.
-- Public links are expiring and revocable; permanent anonymous reports are intentionally unsupported.
-- Published reports disclose observed AI-answer visibility, not guaranteed traffic, leads, or revenue.
-- Recommendation execution and autonomous publishing remain outside Phase 2.
+- A success result means the frozen target metric improved under a comparable rerun; it does not prove causation.
+- Material methodology changes make an experiment invalid.
+- Low completeness, volatile samples, provider-wide anomalies, missing implementation evidence, and uncontrolled changes produce an inconclusive result.
+- Autonomous publishing, direct CMS changes, revenue attribution, and predictive lift promises remain unsupported.
+- All new migrations and routes require a supervised staging deployment before production use.
 
-See `docs/phase-2-product.md` for the product reasoning, invariants, blind spots, and exit criteria.
+See `docs/phase-3-action-experiments.md` for the model, invariants, API, blind spots, and exit criteria.
