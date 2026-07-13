@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Validate Phase 0, Phase 1, and Phase 2
+      - name: Validate Phase 0 through Phase 3
         run: npm run check
       - name: Type-check Cloudflare Worker
         run: npx --yes -p typescript@5.9.3 tsc -p workers/tsconfig.json --noEmit
@@ -25,3 +25,5 @@ jobs:
         run: npm run demo:phase1
       - name: Run Phase 2 publication demo
         run: npm run demo:phase2
+      - name: Run Phase 3 action experiment demo
+        run: npm run demo:phase3

@@ -1,5 +1,6 @@
 import { SupabaseRest } from './supabase';
 import { comparePublishedSnapshots, createReportDraft, createShareLink, getReport, getReviewQueue, publishReport, reviewAuditItem, serveSharedReport } from './phase2-service';
+import { addImplementationEvidence, createActionFinding, createIntervention, evaluateIntervention, getActionBoard, transitionIntervention } from './phase3-service';
 import { renderPortalHome } from './portal';
 import type { Env } from './workflow';
 export { AuditWorkflow } from './workflow';
@@ -9,7 +10,7 @@ export default {
     const url = new URL(request.url);
     const db = new SupabaseRest(env);
     try {
-      if (url.pathname === '/health') return Response.json({ ok: true, service: 'citely-phase2' });
+      if (url.pathname === '/health') return Response.json({ ok: true, service: 'citely-phase3' });
       if (request.method === 'GET' && url.pathname === '/portal') return renderPortalHome();
       const shared = url.pathname.match(/^\/share\/([^/]+)$/);
       if (request.method === 'GET' && shared) return await serveSharedReport(db, decodeURIComponent(shared[1]));
@@ -74,6 +75,39 @@ export default {
         const baselineSnapshot = baseline.versions?.[0]?.snapshot;
         if (!currentSnapshot || !baselineSnapshot) return Response.json({ error: 'both reports require at least one version' }, { status: 409 });
         return Response.json(comparePublishedSnapshots(currentSnapshot, baselineSnapshot));
+      }
+
+      const actionBoard = url.pathname.match(/^\/v1\/brands\/([^/]+)\/action-board$/);
+      if (request.method === 'GET' && actionBoard) return Response.json(await getActionBoard(db, decodeURIComponent(actionBoard[1])));
+
+      const finding = url.pathname.match(/^\/v1\/report-versions\/([^/]+)\/findings$/);
+      if (request.method === 'POST' && finding) {
+        requireActor(actorId);
+        return Response.json(await createActionFinding(db, decodeURIComponent(finding[1]), actorId, await jsonBody(request)), { status: 201 });
+      }
+
+      const intervention = url.pathname.match(/^\/v1\/findings\/([^/]+)\/interventions$/);
+      if (request.method === 'POST' && intervention) {
+        requireActor(actorId);
+        return Response.json(await createIntervention(db, decodeURIComponent(intervention[1]), actorId, await jsonBody(request)), { status: 201 });
+      }
+
+      const transition = url.pathname.match(/^\/v1\/interventions\/([^/]+)\/transition$/);
+      if (request.method === 'POST' && transition) {
+        requireActor(actorId);
+        return Response.json(await transitionIntervention(db, decodeURIComponent(transition[1]), actorId, await jsonBody(request)));
+      }
+
+      const implementationEvidence = url.pathname.match(/^\/v1\/interventions\/([^/]+)\/evidence$/);
+      if (request.method === 'POST' && implementationEvidence) {
+        requireActor(actorId);
+        return Response.json(await addImplementationEvidence(db, decodeURIComponent(implementationEvidence[1]), actorId, await jsonBody(request)), { status: 201 });
+      }
+
+      const evaluation = url.pathname.match(/^\/v1\/interventions\/([^/]+)\/evaluate$/);
+      if (request.method === 'POST' && evaluation) {
+        requireActor(actorId);
+        return Response.json(await evaluateIntervention(db, decodeURIComponent(evaluation[1]), actorId, await jsonBody(request)), { status: 201 });
       }
 
       const report = url.pathname.match(/^\/v1\/reports\/([^/]+)$/);
