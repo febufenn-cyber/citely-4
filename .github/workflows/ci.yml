@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Validate Phase 0 through Phase 4
+      - name: Validate Phase 0 through Phase 5
         run: npm run check
       - name: Type-check Cloudflare Worker
         run: npx --yes -p typescript@5.9.3 tsc -p workers/tsconfig.json --noEmit
@@ -29,5 +29,7 @@ jobs:
         run: npm run demo:phase3
       - name: Run Phase 4 pilot operations demo
         run: npm run demo:phase4
+      - name: Run Phase 5 agency commercial demo
+        run: npm run demo:phase5
       - name: Reject destructive migration statements
         run: "! grep -RniE 'drop table|truncate table|drop column' supabase/migrations"
