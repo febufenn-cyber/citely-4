@@ -2,6 +2,7 @@ import { SupabaseRest } from './supabase';
 import { comparePublishedSnapshots, createReportDraft, createShareLink, getReport, getReviewQueue, publishReport, reviewAuditItem, serveSharedReport } from './phase2-service';
 import { addImplementationEvidence, createActionFinding, createIntervention, evaluateIntervention, getActionBoard, transitionIntervention } from './phase3-service';
 import { authenticatePrincipal, canUsePlatformApi, deploymentHealth, getPilotConsole, recordAuthorizationEvent, renderPilotConsole, requireWorkspacePermission } from './phase4-service';
+import { approveRerun, createRunSchedule, dispatchSchedule, exportReportCsv, getAgencyPortfolio, getWorkspaceEntitlements, linkClientWorkspace, processBillingEvent } from './phase5-service';
 import { renderPortalHome } from './portal';
 import type { Env } from './workflow';
 export { AuditWorkflow } from './workflow';
@@ -12,7 +13,7 @@ export default {
     const db = new SupabaseRest(env);
     const correlationId = request.headers.get('x-correlation-id') ?? crypto.randomUUID();
     try {
-      if (url.pathname === '/health') return Response.json({ ...deploymentHealth(env), correlationId });
+      if (url.pathname === '/health') return Response.json({ ...deploymentHealth(env), service: 'citely-phase5', correlationId });
       if (request.method === 'GET' && url.pathname === '/portal') return renderPortalHome();
       const shared = url.pathname.match(/^\/share\/([^/]+)$/);
       if (request.method === 'GET' && shared) return await serveSharedReport(db, decodeURIComponent(shared[1]));
@@ -22,6 +23,7 @@ export default {
         try { await recordAuthorizationEvent(db, { principal: null, action: `${request.method} ${url.pathname}`, outcome: 'denied', correlationId }); } catch {}
         return Response.json({ error: 'unauthorized', correlationId }, { status: 401 });
       }
+      const actorId = principal.userId ?? request.headers.get('x-actor-id') ?? '';
 
       const ops = url.pathname === '/ops' ? url.searchParams.get('workspace_id') : null;
       const pilot = url.pathname.match(/^\/v1\/workspaces\/([^/]+)\/pilot-console$/)?.[1] ?? null;
@@ -33,38 +35,70 @@ export default {
         return url.pathname === '/ops' ? renderPilotConsole(data) : Response.json({ ...data, correlationId });
       }
 
+      const portfolio = url.pathname.match(/^\/v1\/agencies\/([^/]+)\/portfolio$/);
+      if (request.method === 'GET' && portfolio) return Response.json(await getAgencyPortfolio(db, principal, decodeURIComponent(portfolio[1])));
+
+      const clientLink = url.pathname.match(/^\/v1\/agencies\/([^/]+)\/clients$/);
+      if (request.method === 'POST' && clientLink) {
+        requireActor(actorId);
+        const body = await jsonBody(request) as { workspaceId?: string };
+        if (!body.workspaceId) return Response.json({ error: 'workspaceId is required' }, { status: 400 });
+        return Response.json(await linkClientWorkspace(db, principal, decodeURIComponent(clientLink[1]), body.workspaceId, actorId), { status: 201 });
+      }
+
+      const agencyWorkspace = url.pathname.match(/^\/v1\/agencies\/([^/]+)\/workspaces\/([^/]+)\/(entitlements|schedules)$/);
+      if (agencyWorkspace) {
+        const agencyId = decodeURIComponent(agencyWorkspace[1]);
+        const workspaceId = decodeURIComponent(agencyWorkspace[2]);
+        const view = await getAgencyPortfolio(db, principal, agencyId);
+        if (!view.clients.some((client: any) => client.workspace.id === workspaceId)) return Response.json({ error: 'workspace_not_linked' }, { status: 403 });
+        if (request.method === 'GET' && agencyWorkspace[3] === 'entitlements') return Response.json(await getWorkspaceEntitlements(db, workspaceId));
+        if (request.method === 'POST' && agencyWorkspace[3] === 'schedules') { requireActor(actorId); return Response.json(await createRunSchedule(db, workspaceId, actorId, await jsonBody(request)), { status: 201 }); }
+      }
+
+      const rerun = url.pathname.match(/^\/v1\/workspaces\/([^/]+)\/reports\/([^/]+)\/rerun-approval$/);
+      if (request.method === 'POST' && rerun) {
+        const workspaceId = decodeURIComponent(rerun[1]);
+        await requireWorkspacePermission(db, principal, workspaceId, 'report:read');
+        requireActor(actorId);
+        const body = await jsonBody(request) as { decision?: string; notes?: string };
+        return Response.json(await approveRerun(db, decodeURIComponent(rerun[2]), workspaceId, actorId, body.decision ?? 'pending', body.notes), { status: 201 });
+      }
+
+      const csv = url.pathname.match(/^\/v1\/workspaces\/([^/]+)\/reports\/([^/]+)\/export\.csv$/);
+      if (request.method === 'GET' && csv) {
+        const workspaceId = decodeURIComponent(csv[1]);
+        await requireWorkspacePermission(db, principal, workspaceId, 'report:read');
+        return await exportReportCsv(db, decodeURIComponent(csv[2]), workspaceId);
+      }
+
       const operation = request.method === 'GET' ? 'read' : /review/.test(url.pathname) ? 'review' : 'mutate';
       if (!canUsePlatformApi(principal, operation)) {
         await recordAuthorizationEvent(db, { principal, action: `${request.method} ${url.pathname}`, outcome: 'denied', correlationId });
         return Response.json({ error: 'forbidden', correlationId }, { status: 403 });
       }
-      const actorId = principal.userId ?? request.headers.get('x-actor-id') ?? '';
+
+      const billing = url.pathname.match(/^\/v1\/billing\/webhooks\/([^/]+)$/);
+      if (request.method === 'POST' && billing) {
+        if (principal.kind !== 'service') return Response.json({ error: 'service_principal_required' }, { status: 403 });
+        return Response.json(await processBillingEvent(db, decodeURIComponent(billing[1]), await jsonBody(request)), { status: 202 });
+      }
+      const scheduleDispatch = url.pathname.match(/^\/v1\/schedules\/([^/]+)\/dispatch$/);
+      if (request.method === 'POST' && scheduleDispatch) {
+        const body = await jsonBody(request) as { scheduledFor?: string };
+        if (!body.scheduledFor) return Response.json({ error: 'scheduledFor is required' }, { status: 400 });
+        return Response.json(await dispatchSchedule(db, decodeURIComponent(scheduleDispatch[1]), body.scheduledFor), { status: 202 });
+      }
 
       const start = url.pathname.match(/^\/v1\/audit-runs\/([^/]+)\/start$/);
       if (request.method === 'POST' && start) {
-        const auditRunId = decodeURIComponent(start[1]);
-        const instanceId = `audit-${auditRunId}`;
-        try {
-          const instance = await env.AUDIT_WORKFLOW.create({ id: instanceId, params: { auditRunId } });
-          return Response.json({ auditRunId, workflowInstanceId: instance.id, correlationId }, { status: 202 });
-        } catch {
-          const existing = await env.AUDIT_WORKFLOW.get(instanceId);
-          return Response.json({ auditRunId, workflowInstanceId: existing.id, status: await existing.status(), reused: true, correlationId });
-        }
+        const auditRunId = decodeURIComponent(start[1]); const instanceId = `audit-${auditRunId}`;
+        try { const instance = await env.AUDIT_WORKFLOW.create({ id: instanceId, params: { auditRunId } }); return Response.json({ auditRunId, workflowInstanceId: instance.id, correlationId }, { status: 202 }); }
+        catch { const existing = await env.AUDIT_WORKFLOW.get(instanceId); return Response.json({ auditRunId, workflowInstanceId: existing.id, status: await existing.status(), reused: true, correlationId }); }
       }
-
       const workflowStatus = url.pathname.match(/^\/v1\/workflows\/([^/]+)$/);
-      if (request.method === 'GET' && workflowStatus) {
-        const instance = await env.AUDIT_WORKFLOW.get(decodeURIComponent(workflowStatus[1]));
-        return Response.json({ status: await instance.status(), correlationId });
-      }
-
-      if (request.method === 'GET' && url.pathname === '/v1/review-queue') {
-        const workspaceId = url.searchParams.get('workspace_id');
-        if (!workspaceId) return Response.json({ error: 'workspace_id is required' }, { status: 400 });
-        return Response.json({ items: await getReviewQueue(db, workspaceId), correlationId });
-      }
-
+      if (request.method === 'GET' && workflowStatus) { const instance = await env.AUDIT_WORKFLOW.get(decodeURIComponent(workflowStatus[1])); return Response.json({ status: await instance.status(), correlationId }); }
+      if (request.method === 'GET' && url.pathname === '/v1/review-queue') { const workspaceId = url.searchParams.get('workspace_id'); if (!workspaceId) return Response.json({ error: 'workspace_id is required' }, { status: 400 }); return Response.json({ items: await getReviewQueue(db, workspaceId), correlationId }); }
       const review = url.pathname.match(/^\/v1\/audit-run-items\/([^/]+)\/review$/);
       if (request.method === 'POST' && review) { requireActor(actorId); return Response.json(await reviewAuditItem(db, decodeURIComponent(review[1]), actorId, await jsonBody(request))); }
       const draft = url.pathname.match(/^\/v1\/audit-runs\/([^/]+)\/report-draft$/);
@@ -97,14 +131,5 @@ export default {
   }
 } satisfies ExportedHandler<Env>;
 
-function requireActor(actorId: string) {
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(actorId)) {
-    const error = new Error('authenticated user or valid x-actor-id is required') as Error & { status: number };
-    error.status = 400;
-    throw error;
-  }
-}
-async function jsonBody(request: Request): Promise<any> {
-  try { return await request.json(); }
-  catch { const error = new Error('valid JSON body is required') as Error & { status: number }; error.status = 400; throw error; }
-}
+function requireActor(actorId: string) { if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(actorId)) { const error = new Error('authenticated user or valid x-actor-id is required') as Error & { status: number }; error.status = 400; throw error; } }
+async function jsonBody(request: Request): Promise<any> { try { return await request.json(); } catch { const error = new Error('valid JSON body is required') as Error & { status: number }; error.status = 400; throw error; } }
