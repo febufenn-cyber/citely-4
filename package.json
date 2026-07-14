@@ -1,8 +1,8 @@
 {
-  "name": "citely-production-pilot-ops",
-  "version": "0.5.0",
+  "name": "citely-agency-commercial-os",
+  "version": "0.6.0",
   "private": true,
-  "description": "Evidence-backed AI visibility measurement with authenticated pilot operations",
+  "description": "Multi-client AI visibility operations with scheduling, entitlements and commercial controls",
   "type": "module",
   "engines": { "node": ">=20" },
   "scripts": {
@@ -12,15 +12,18 @@
     "demo:phase2": "node src/phase2-demo.mjs",
     "demo:phase3": "node src/phase3-demo.mjs",
     "demo:phase4": "node src/phase4-demo.mjs",
+    "demo:phase5": "node src/phase5-demo.mjs",
     "test": "node --test",
     "test:phase2": "node --test tests/phase2-reporting.test.mjs",
     "test:phase3": "node --test tests/phase3-actions.test.mjs",
     "test:phase4": "node --test tests/phase4-production.test.mjs",
+    "test:phase5": "node --test tests/phase5-commercial.test.mjs",
     "check:phase1": "node --check src/phase1-demo.mjs && find src/engine -name '*.mjs' -print0 | xargs -0 -n1 node --check && node --test tests/phase1-engine.test.mjs",
     "check:phase2": "find src/phase2 -name '*.mjs' -print0 | xargs -0 -n1 node --check && node --check src/phase2-demo.mjs && node --test tests/phase2-reporting.test.mjs",
     "check:phase3": "find src/phase3 -name '*.mjs' -print0 | xargs -0 -n1 node --check && node --check src/phase3-demo.mjs && node --test tests/phase3-actions.test.mjs",
     "check:phase4": "find src/phase4 -name '*.mjs' -print0 | xargs -0 -n1 node --check && node --check src/phase4-demo.mjs && node --test tests/phase4-production.test.mjs",
+    "check:phase5": "find src/phase5 -name '*.mjs' -print0 | xargs -0 -n1 node --check && node --check src/phase5-demo.mjs && node --test tests/phase5-commercial.test.mjs",
     "check:worker": "tsc -p workers/tsconfig.json --noEmit",
-    "check": "node --check src/citely.mjs && node --check src/phase1-demo.mjs && find src/engine src/phase2 src/phase3 src/phase4 -name '*.mjs' -print0 | xargs -0 -n1 node --check && node --check src/phase2-demo.mjs && node --check src/phase3-demo.mjs && node --check src/phase4-demo.mjs && node --test"
+    "check": "node --check src/citely.mjs && node --check src/phase1-demo.mjs && find src/engine src/phase2 src/phase3 src/phase4 src/phase5 -name '*.mjs' -print0 | xargs -0 -n1 node --check && node --check src/phase2-demo.mjs && node --check src/phase3-demo.mjs && node --check src/phase4-demo.mjs && node --check src/phase5-demo.mjs && node --test"
   }
 }
