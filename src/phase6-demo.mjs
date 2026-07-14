@@ -1,0 +1,15 @@
+import { buildBenchmarkSnapshot, buildRecommendationEvidence, buildSourceGraph, detectCanaryDrift, launchReadiness, tenantBenchmarkView } from './phase6/intelligence.mjs';
+import { mkdir, writeFile } from 'node:fs/promises';
+const methodology={promptPanelFingerprint:'panel-v1',providerProfilesFingerprint:'profiles-v1',searchModesFingerprint:'web',geographyFingerprint:'india',localeFingerprint:'en-in',scoringModelVersion:'visibility-v1'};
+const records=Array.from({length:5},(_,index)=>({workspaceId:`workspace-${index+1}`,brandId:`brand-${index+1}`,dimensions:{industry:'b2b-saas',geography:'india',locale:'en-in'},methodology,observationCount:25,metrics:{mentionRate:0.2+index*0.1,weightedVisibility:20+index*5}}));
+const consents=records.map((record)=>({workspaceId:record.workspaceId,purpose:'benchmark_intelligence',status:'granted',grantedAt:'2026-07-01',updatedAt:'2026-07-01'}));
+const benchmark=buildBenchmarkSnapshot({records,consents,rule:{minWorkspaces:5,minBrands:5,minObservations:100}});
+const benchmarkView=tenantBenchmarkView(benchmark,records[0]);
+const sourceGraph=buildSourceGraph([{evidence:[{provider:{name:'openai'},citations:[{url:'https://analyst.example/report',ownership:'third_party'}],sources:[{url:'https://citely.example/methodology',ownership:'brand_owned'}]}]}]);
+const canaries=[{provider:'openai',ok:true,refused:false,citationCount:3,latencyMs:100,costMicros:120,mentionStatus:2},{provider:'perplexity',ok:true,refused:false,citationCount:4,latencyMs:120,costMicros:100,mentionStatus:2}];
+const drift=detectCanaryDrift({baseline:canaries,current:canaries});
+const recommendations=buildRecommendationEvidence(['success','partial_success','no_change'].map((outcome,index)=>({interventionType:'comparison_page',mechanism:'structured category evidence',outcome,implementationVerified:true,delta:2-index})),{minSamples:3});
+const readiness=launchReadiness({activeConsents:consents.length,visibleBenchmarkCohorts:benchmark.cohorts.filter((cohort)=>!cohort.suppressed).length,canaryStatus:drift.status,recommendationGroups:recommendations.filter((item)=>!item.suppressed).length,latestDeploymentVerified:false,livePilotVerified:false});
+await mkdir('output/phase6-demo',{recursive:true});
+await writeFile('output/phase6-demo/launch-readiness.json',JSON.stringify({benchmark,benchmarkView,sourceGraph,drift,recommendations,readiness},null,2));
+console.log(JSON.stringify({benchmarkVisible:benchmarkView.available,sourceDomains:sourceGraph.nodes.length,drift:drift.status,recommendations:recommendations.length,launchStatus:readiness.status},null,2));
