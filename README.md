@@ -1,75 +1,65 @@
 # Citely
 
-> Evidence-backed AI answer visibility measurement, controlled customer reporting, and guarded action experiments.
+> Evidence-backed AI visibility measurement, controlled reporting, guarded experiments, and authenticated pilot operations.
 
-Citely now contains four connected product layers:
+Citely now contains five connected layers:
 
-1. **Phase 0 — audit operator:** configurable prompt panels, provider adapters, raw evidence, directional analysis, Markdown and HTML output.
-2. **Phase 1 — reliable measurement engine:** immutable observations, retries, budgets, review decisions, versioned scoring, Supabase and Cloudflare Workflows.
-3. **Phase 2 — evidence delivery:** review APIs, immutable report versions, publication, expiring share links, evidence-first HTML reports, and guarded baseline comparisons.
-4. **Phase 3 — action and experiment engine:** prioritized findings, assigned interventions, frozen hypotheses and success criteria, implementation evidence, comparable reruns, and observational outcome evaluation.
+1. **Phase 0 — audit operator**
+2. **Phase 1 — reliable measurement engine**
+3. **Phase 2 — evidence delivery portal**
+4. **Phase 3 — action and experiment engine**
+5. **Phase 4 — production pilot operations:** verified sessions, platform/workspace authorization, deployment manifests, operational audit events, provider health and a pilot console.
 
-## Phase 3 principle
+## Phase 4 principle
 
-Citely does not jump from a visibility gap to an unsupported recommendation. The action loop is:
+Human operators use verified Supabase sessions. A service bearer key remains only for narrowly scoped machine operations. Platform roles and workspace roles are evaluated separately, and every denied or allowed sensitive operation can be correlated without logging secrets.
 
 ```text
-published finding
-→ prioritized action
-→ assigned intervention
-→ frozen experiment plan
-→ implementation evidence
-→ comparable rerun
-→ guarded evaluation
+verified session
+→ platform/workspace authorization
+→ audited operation
+→ immutable evidence workflow
+→ pilot verification record
 ```
 
-Every experiment freezes its baseline report, target prompts, provider scope, primary metric, minimum effect, completeness threshold, sample requirement, and guardrails before implementation. Results are capped at `moderate` causal confidence and explicitly described as observational rather than proof.
-
-## Local validation
+## Validation
 
 ```bash
 npm run check
 npm run check:worker
-npm run demo:phase3
+npm run demo:phase4
 ```
 
-The Phase 3 demo writes:
+The demo writes `output/phase4-demo/pilot-verification.json` and proves the complete audit-to-evaluation stage contract with security checks. It does not claim a live Cloudflare or Supabase deployment.
+
+## Phase 4 routes
+
+Public:
 
 ```text
-output/phase3-demo/action-experiment.json
+GET /health
+GET /portal
+GET /share/:token
 ```
 
-## Phase 3 API
-
-Operator-authenticated:
+Authenticated pilot operations:
 
 ```text
-GET  /v1/brands/:brandId/action-board
-POST /v1/report-versions/:reportVersionId/findings
-POST /v1/findings/:findingId/interventions
-POST /v1/interventions/:interventionId/transition
-POST /v1/interventions/:interventionId/evidence
-POST /v1/interventions/:interventionId/evaluate
+GET /ops?workspace_id=<uuid>
+GET /v1/workspaces/:workspaceId/pilot-console
 ```
 
-Existing Phase 2 public report and operator endpoints remain available. Mutations require `x-actor-id` with the UUID of the acting Supabase user.
+Existing Phase 1–3 APIs remain available to service principals and authorized platform staff. Human tokens are verified through Supabase Auth; the Worker never trusts an unsigned user identifier header as authentication.
 
-## Database migrations
+## Deployment identity
 
-Apply all ordered migrations through the normal Supabase workflow:
-
-```bash
-supabase db push
-```
-
-Phase 3 adds findings, interventions, append-only state events, implementation evidence, frozen experiment plans, immutable evaluations, RLS, and experiment-configuration freeze controls.
+Set `ENVIRONMENT`, `BUILD_COMMIT` and `SCHEMA_VERSION` on each deployment. `/health` exposes those non-secret values so a staging smoke test can prove which code and schema are running.
 
 ## Important boundaries
 
-- A success result means the frozen target metric improved under a comparable rerun; it does not prove causation.
-- Material methodology changes make an experiment invalid.
-- Low completeness, volatile samples, provider-wide anomalies, missing implementation evidence, and uncontrolled changes produce an inconclusive result.
-- Autonomous publishing, direct CMS changes, revenue attribution, and predictive lift promises remain unsupported.
-- All new migrations and routes require a supervised staging deployment before production use.
+- The Phase 4 migration and Worker still require a real staging deployment.
+- The operator service key must be rotated, restricted and excluded from browser clients.
+- Billing, agency portfolios and cross-customer benchmarks remain outside Phase 4.
+- Provider evidence, report versions, implementation evidence and evaluations remain immutable.
 
-See `docs/phase-3-action-experiments.md` for the model, invariants, API, blind spots, and exit criteria.
+See `docs/phase-4-production-pilots.md` and `docs/phase-4-runbook.md`.
