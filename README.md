@@ -1,25 +1,27 @@
 # Citely
 
-> Evidence-backed AI visibility measurement, controlled reporting, guarded experiments, and authenticated pilot operations.
+> Evidence-backed AI visibility measurement, controlled reporting, guarded experiments, authenticated operations, and multi-client commercial workflows.
 
-Citely now contains five connected layers:
+Citely now contains six connected layers:
 
 1. **Phase 0 — audit operator**
 2. **Phase 1 — reliable measurement engine**
 3. **Phase 2 — evidence delivery portal**
 4. **Phase 3 — action and experiment engine**
-5. **Phase 4 — production pilot operations:** verified sessions, platform/workspace authorization, deployment manifests, operational audit events, provider health and a pilot console.
+5. **Phase 4 — production pilot operations**
+6. **Phase 5 — agency and commercial OS:** isolated client portfolios, server-side entitlements, controlled scheduling, usage and billing event ledgers, agency-safe exports, and margin analytics.
 
-## Phase 4 principle
+## Phase 5 principle
 
-Human operators use verified Supabase sessions. A service bearer key remains only for narrowly scoped machine operations. Platform roles and workspace roles are evaluated separately, and every denied or allowed sensitive operation can be correlated without logging secrets.
+Agency access never flattens tenants into one shared dataset. Every agency-to-client relationship is an explicit workspace link, every client remains isolated, and every provider-spend action is checked against server-side entitlements before work begins.
 
 ```text
-verified session
-→ platform/workspace authorization
-→ audited operation
-→ immutable evidence workflow
-→ pilot verification record
+agency or client identity
+→ linked workspace authorization
+→ entitlement and budget check
+→ idempotent schedule or manual run
+→ reviewed report and export
+→ immutable usage/commercial events
 ```
 
 ## Validation
@@ -27,39 +29,36 @@ verified session
 ```bash
 npm run check
 npm run check:worker
-npm run demo:phase4
+npm run demo:phase5
 ```
 
-The demo writes `output/phase4-demo/pilot-verification.json` and proves the complete audit-to-evaluation stage contract with security checks. It does not claim a live Cloudflare or Supabase deployment.
+The Phase 5 demo writes `output/phase5-demo/agency-commercial.json` and exercises two isolated clients, three brands, an active manual/provider-neutral subscription projection, entitlement checks, deterministic scheduling, and margin analytics.
 
-## Phase 4 routes
-
-Public:
+## Phase 5 routes
 
 ```text
-GET /health
-GET /portal
-GET /share/:token
+GET  /v1/agencies/:agencyId/portfolio
+POST /v1/agencies/:agencyId/clients
+GET  /v1/agencies/:agencyId/workspaces/:workspaceId/entitlements
+POST /v1/agencies/:agencyId/workspaces/:workspaceId/schedules
+POST /v1/schedules/:scheduleId/dispatch
+POST /v1/workspaces/:workspaceId/reports/:reportVersionId/rerun-approval
+GET  /v1/reports/:reportId/export.csv
+POST /v1/billing/webhooks/:provider
 ```
 
-Authenticated pilot operations:
+The billing webhook is service-principal only. Billing may remain in manual mode until a provider is configured. Duplicate and out-of-order events cannot regress the current subscription projection.
 
-```text
-GET /ops?workspace_id=<uuid>
-GET /v1/workspaces/:workspaceId/pilot-console
-```
+## Commercial safety
 
-Existing Phase 1–3 APIs remain available to service principals and authorized platform staff. Human tokens are verified through Supabase Auth; the Worker never trusts an unsigned user identifier header as authentication.
-
-## Deployment identity
-
-Set `ENVIRONMENT`, `BUILD_COMMIT` and `SCHEMA_VERSION` on each deployment. `/health` exposes those non-secret values so a staging smoke test can prove which code and schema are running.
+- Brand, observation, run and feature entitlements are enforced server-side.
+- Scheduled executions use deterministic keys and are duplicate-safe.
+- Agency-branded reports retain Citely attribution, methodology, completeness and limitations.
+- CSV exports use approved report snapshots and exclude raw provider payloads and internal review notes.
+- Analytics report operating cost and gross margin; they do not attribute customer revenue to AI visibility.
 
 ## Important boundaries
 
-- The Phase 4 migration and Worker still require a real staging deployment.
-- The operator service key must be rotated, restricted and excluded from browser clients.
-- Billing, agency portfolios and cross-customer benchmarks remain outside Phase 4.
-- Provider evidence, report versions, implementation evidence and evaluations remain immutable.
+Cross-customer benchmarks, autonomous publishing, unrestricted reruns and predictive lift promises remain disabled. Live billing, email delivery and scheduler deployment require provider credentials and staging verification.
 
-See `docs/phase-4-production-pilots.md` and `docs/phase-4-runbook.md`.
+See `docs/phase-5-agency-commercial.md`.
